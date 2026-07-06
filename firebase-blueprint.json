@@ -1,0 +1,59 @@
+{
+  "collections": [
+    {
+      "name": "users",
+      "description": "Stores user profiles and roles.",
+      "schema": {
+        "email": "string",
+        "role": "string (admin | staff)",
+        "createdAt": "timestamp"
+      }
+    },
+    {
+      "name": "receipts",
+      "description": "Stores payment receipts.",
+      "schema": {
+        "receiptNumber": "string",
+        "date": "timestamp",
+        "customerName": "string",
+        "whatsappNumber": "string",
+        "paymentMethod": "string",
+        "transactionId": "string",
+        "remarks": "string",
+        "services": "array of {name: string, amount: number}",
+        "totalAmount": "number",
+        "createdBy": "string (user id)",
+        "createdAt": "timestamp"
+      }
+    }
+  ],
+  "queries": [
+    {
+      "collection": "receipts",
+      "description": "Get all receipts, ordered by date descending",
+      "orderBy": [
+        {
+          "field": "createdAt",
+          "direction": "desc"
+        }
+      ]
+    },
+    {
+      "collection": "receipts",
+      "description": "Get receipts for a specific staff member",
+      "filters": [
+        {
+          "field": "createdBy",
+          "operator": "==",
+          "value": "{userId}"
+        }
+      ],
+      "orderBy": [
+        {
+          "field": "createdAt",
+          "direction": "desc"
+        }
+      ]
+    }
+  ]
+}

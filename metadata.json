@@ -1,0 +1,6 @@
+{
+  "name": "Digital Solution Receipt System",
+  "description": "A minimal office payment receipt web app for Digital Solution staff to manage collections, generate PDF/JPG receipts, and send WhatsApp messages.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

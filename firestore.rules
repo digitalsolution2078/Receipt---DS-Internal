@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      // Allow creation if the user is writing their own doc and it doesn't exist yet,
+      // or if they are an admin. This helps with initial registration.
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update, delete: if isAdmin();
+    }
+
+    match /receipts/{receiptId} {
+      allow read: if isAuthenticated() && (isAdmin() || resource.data.createdBy == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin() || resource.data.createdBy == request.auth.uid;
+    }
+  }
+}
