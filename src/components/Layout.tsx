@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../lib/AuthContext';
-import { LogOut, Receipt, LayoutDashboard, PlusCircle, Users, Settings as SettingsIcon } from 'lucide-react';
+import { LogOut, Receipt, LayoutDashboard, PlusCircle, Users, Settings as SettingsIcon, FileText } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function Layout() {
@@ -18,6 +18,7 @@ export function Layout() {
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Create Receipt', path: '/create', icon: PlusCircle },
     { name: 'Receipts', path: '/receipts', icon: Receipt },
+    { name: 'Reports', path: '/reports', icon: FileText },
   ];
 
   if (profile?.role === 'admin') {

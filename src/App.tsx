@@ -14,6 +14,9 @@ import { ReceiptsList } from './pages/ReceiptsList';
 import { ReceiptPreview } from './pages/ReceiptPreview';
 import { UsersList } from './pages/UsersList';
 import { Settings } from './pages/Settings';
+import { VerifyOrder } from './pages/VerifyOrder';
+import { Reports } from './pages/Reports';
+import { Setup } from './pages/Setup';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -30,6 +33,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/setup" element={<Setup />} />
+          <Route path="/verify/:id" element={<VerifyOrder />} />
           <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="create" element={<CreateReceipt />} />
@@ -38,9 +43,11 @@ export default function App() {
             <Route path="receipt/:id" element={<ReceiptPreview />} />
             <Route path="users" element={<UsersList />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="reports" element={<Reports />} />
           </Route>
         </Routes>
       </BrowserRouter>
+
     </AuthProvider>
   );
 }

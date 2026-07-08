@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import NepaliDate from 'nepali-datetime';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -8,9 +9,20 @@ export function cn(...inputs: ClassValue[]) {
 export function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: 'INR',
+    currency: 'NPR',
     minimumFractionDigits: 2,
-  }).format(amount);
+  }).format(amount).replace('NPR', 'Rs.');
+}
+
+export function formatEnglishDate(timestamp: number) {
+  const d = new Date(timestamp);
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+export function formatNepaliDate(timestamp: number) {
+  const d = new Date(timestamp);
+  const nd = new NepaliDate(d);
+  return nd.format('YYYY-MM-DD');
 }
 
 const units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];

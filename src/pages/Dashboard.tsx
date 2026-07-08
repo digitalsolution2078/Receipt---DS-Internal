@@ -15,10 +15,10 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    function fetchDashboardData() {
+    async function fetchDashboardData() {
       if (!profile) return;
       try {
-        let allReceipts = getReceipts();
+        let allReceipts = await getReceipts();
         
         if (profile.role === 'staff') {
           allReceipts = allReceipts.filter(r => r.createdBy === profile.uid);

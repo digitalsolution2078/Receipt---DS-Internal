@@ -27,4 +27,17 @@ export interface Receipt {
   createdBy: string;
   staffName?: string;
   createdAt: number;
+  verified?: boolean;
+  verifiedAt?: number;
+}
+
+export interface PredefinedService {
+  id?: string;
+  name: string;
+  defaultAmount: number;
+}
+
+export interface PaymentMethod {
+  id?: string;
+  name: string;
 }

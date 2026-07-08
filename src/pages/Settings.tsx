@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../lib/AuthContext';
-import { getPaymentMethods, savePaymentMethods, getPredefinedServices, savePredefinedService, PredefinedService } from '../lib/localDb';
+import { getPaymentMethods, savePaymentMethods, getPredefinedServices, savePredefinedService, deletePredefinedService, PredefinedService } from '../lib/localDb';
 import { Trash2, Plus } from 'lucide-react';
 import { Navigate } from 'react-router';
 
@@ -15,14 +15,17 @@ export function Settings() {
   const [newServiceAmount, setNewServiceAmount] = useState('');
 
   useEffect(() => {
-    setPaymentMethods(getPaymentMethods());
-    setServices(getPredefinedServices());
+    async function load() {
+      setPaymentMethods(await getPaymentMethods());
+      setServices(await getPredefinedServices());
+    }
+    load();
   }, []);
 
   if (loading) return <div className="p-4">Loading...</div>;
   if (!profile || profile.role !== 'admin') return <Navigate to="/" replace />;
 
-  const handleAddMethod = (e: React.FormEvent) => {
+  const handleAddMethod = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMethod.trim()) return;
     if (paymentMethods.includes(newMethod.trim())) {
@@ -31,17 +34,17 @@ export function Settings() {
     }
     const updated = [...paymentMethods, newMethod.trim()];
     setPaymentMethods(updated);
-    savePaymentMethods(updated);
+    await savePaymentMethods(updated);
     setNewMethod('');
   };
 
-  const handleDeleteMethod = (method: string) => {
+  const handleDeleteMethod = async (method: string) => {
     const updated = paymentMethods.filter(m => m !== method);
     setPaymentMethods(updated);
-    savePaymentMethods(updated);
+    await savePaymentMethods(updated);
   };
 
-  const handleAddService = (e: React.FormEvent) => {
+  const handleAddService = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newServiceName.trim() || !newServiceAmount) return;
     
@@ -53,18 +56,15 @@ export function Settings() {
     
     const updated = [...services, newService];
     setServices(updated);
-    // Actually we need to rewrite `savePredefinedService` to save array or we can just push.
-    // In localDb it pushes to array. So we can just call savePredefinedService.
-    savePredefinedService(newService);
+    await savePredefinedService(newService);
     setNewServiceName('');
     setNewServiceAmount('');
   };
 
-  // For delete service we need to update localDb as well, let's just rewrite the storage manually or add a delete function.
-  const handleDeleteService = (id: string) => {
+  const handleDeleteService = async (id: string) => {
     const updated = services.filter(s => s.id !== id);
     setServices(updated);
-    localStorage.setItem('demo_services', JSON.stringify(updated));
+    await deletePredefinedService(id);
   };
 
   return (

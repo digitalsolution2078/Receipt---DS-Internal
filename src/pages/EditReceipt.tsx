@@ -23,24 +23,37 @@ export function EditReceipt() {
   
   const [services, setServices] = useState([{ id: Date.now().toString(), name: '', amount: 0 }]);
   
-  const paymentMethodsList = getPaymentMethods();
-  const predefinedServices = getPredefinedServices();
+  const [paymentMethodsList, setPaymentMethodsList] = useState<string[]>([]);
+  const [predefinedServices, setPredefinedServices] = useState<PredefinedService[]>([]);
 
   useEffect(() => {
-    if (!id) return;
-    const existing = getReceiptById(id);
-    if (existing) {
-      setCustomerName(existing.customerName);
-      setWhatsappNumber(existing.whatsappNumber);
-      setPaymentMethod(existing.paymentMethod);
-      setTransactionId(existing.transactionId || '');
-      setRemarks(existing.remarks || '');
-      setStaffName(existing.staffName || '');
-      setServices(existing.services);
-      setReceiptNumber(existing.receiptNumber);
-      setCreatedAt(existing.createdAt);
+    async function fetchSettings() {
+      const pMethods = await getPaymentMethods();
+      const pServices = await getPredefinedServices();
+      setPaymentMethodsList(pMethods);
+      setPredefinedServices(pServices);
     }
-    setInitialLoad(false);
+    fetchSettings();
+  }, []);
+
+  useEffect(() => {
+    async function load() {
+      if (!id) return;
+      const existing = await getReceiptById(id);
+      if (existing) {
+        setCustomerName(existing.customerName);
+        setWhatsappNumber(existing.whatsappNumber);
+        setPaymentMethod(existing.paymentMethod);
+        setTransactionId(existing.transactionId || '');
+        setRemarks(existing.remarks || '');
+        setStaffName(existing.staffName || '');
+        setServices(existing.services);
+        setReceiptNumber(existing.receiptNumber);
+        setCreatedAt(existing.createdAt);
+      }
+      setInitialLoad(false);
+    }
+    load();
   }, [id]);
 
   const addService = () => {
@@ -95,33 +108,31 @@ export function EditReceipt() {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      try {
-        const updatedReceipt = {
-          id,
-          receiptNumber,
-          date: createdAt, // maintain original date
-          customerName,
-          whatsappNumber,
-          paymentMethod,
-          transactionId,
-          remarks,
-          services: validServices,
-          totalAmount,
-          createdBy: profile.uid,
-          staffName: staffName.trim(),
-          createdAt: createdAt
-        };
+    try {
+      const updatedReceipt: any = {
+        id,
+        receiptNumber,
+        date: createdAt, // maintain original date
+        customerName,
+        whatsappNumber,
+        paymentMethod,
+        transactionId,
+        remarks,
+        services: validServices,
+        totalAmount,
+        createdBy: profile.uid,
+        staffName: staffName.trim(),
+        createdAt: createdAt
+      };
 
-        updateReceipt(updatedReceipt);
-        navigate(`/receipt/${id}`);
-      } catch (error) {
-        console.error("Error updating receipt", error);
-        alert("Failed to update receipt");
-      } finally {
-        setLoading(false);
-      }
-    }, 500);
+      await updateReceipt(updatedReceipt);
+      navigate(`/receipt/${id}`);
+    } catch (error) {
+      console.error("Error updating receipt", error);
+      alert("Failed to update receipt");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (initialLoad) return <div className="p-4">Loading receipt details...</div>;

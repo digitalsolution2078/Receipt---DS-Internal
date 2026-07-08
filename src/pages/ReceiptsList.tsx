@@ -12,10 +12,10 @@ export function ReceiptsList() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    function fetchReceipts() {
+    async function fetchReceipts() {
       if (!profile) return;
       try {
-        let allReceipts = getReceipts();
+        let allReceipts = await getReceipts();
         
         if (profile.role === 'staff') {
           allReceipts = allReceipts.filter(r => r.createdBy === profile.uid);

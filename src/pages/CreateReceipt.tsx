@@ -19,22 +19,29 @@ export function CreateReceipt() {
   
   const [services, setServices] = useState([{ id: Date.now().toString(), name: '', amount: 0 }]);
   
-  const paymentMethodsList = getPaymentMethods();
-  const predefinedServices = getPredefinedServices();
+  const [paymentMethodsList, setPaymentMethodsList] = useState<string[]>([]);
+  const [predefinedServices, setPredefinedServices] = useState<PredefinedService[]>([]);
 
   useEffect(() => {
-    if (paymentMethodsList.length > 0 && !paymentMethod) {
-      setPaymentMethod(paymentMethodsList[0]);
+    async function fetchSettings() {
+      const pMethods = await getPaymentMethods();
+      const pServices = await getPredefinedServices();
+      setPaymentMethodsList(pMethods);
+      setPredefinedServices(pServices);
+      if (pMethods.length > 0 && !paymentMethod) {
+        setPaymentMethod(pMethods[0]);
+      }
     }
-  }, [paymentMethodsList, paymentMethod]);
+    fetchSettings();
+  }, []);
 
-  const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleWhatsappChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setWhatsappNumber(val);
     
     // Lookup customer name from previous receipts
     if (val.length >= 10) {
-      const allReceipts = getReceipts();
+      const allReceipts = await getReceipts();
       const match = allReceipts.find(r => r.whatsappNumber === val && r.customerName);
       if (match && match.customerName) {
         setCustomerName(match.customerName);
@@ -95,35 +102,31 @@ export function CreateReceipt() {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      try {
-        const receiptNumber = generateReceiptNumber();
-        const id = Date.now().toString();
-        const newReceipt = {
-          id,
-          receiptNumber,
-          date: Date.now(),
-          customerName,
-          whatsappNumber,
-          paymentMethod,
-          transactionId,
-          remarks,
-          services: validServices,
-          totalAmount,
-          createdBy: profile.uid,
-          staffName: staffName.trim(),
-          createdAt: Date.now()
-        };
+    try {
+      const receiptNumber = await generateReceiptNumber();
+      const newReceipt: any = {
+        receiptNumber,
+        date: Date.now(),
+        customerName,
+        whatsappNumber,
+        paymentMethod,
+        transactionId,
+        remarks,
+        services: validServices,
+        totalAmount,
+        createdBy: profile.uid,
+        staffName: staffName.trim(),
+        createdAt: Date.now()
+      };
 
-        saveReceipt(newReceipt);
-        navigate(`/receipt/${id}`);
-      } catch (error) {
-        console.error("Error creating receipt", error);
-        alert("Failed to create receipt");
-      } finally {
-        setLoading(false);
-      }
-    }, 500);
+      const newId = await saveReceipt(newReceipt);
+      navigate(`/receipt/${newId}`);
+    } catch (error) {
+      console.error("Error creating receipt", error);
+      alert("Failed to create receipt");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

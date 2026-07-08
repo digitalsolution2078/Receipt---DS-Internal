@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import { useAuth } from '../lib/AuthContext';
 import { Receipt } from '../types';
-import { formatCurrency, numberToWords } from '../lib/utils';
+import { formatCurrency, numberToWords, formatEnglishDate, formatNepaliDate } from '../lib/utils';
 import { Download, FileImage, Send, ArrowLeft, Edit } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -17,10 +17,10 @@ export function ReceiptPreview() {
   const receiptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function fetchReceipt() {
+    async function fetchReceipt() {
       if (!id) return;
       try {
-        const foundReceipt = getReceiptById(id);
+        const foundReceipt = await getReceiptById(id);
         if (foundReceipt) {
           setReceipt(foundReceipt);
         }
@@ -66,6 +66,7 @@ export function ReceiptPreview() {
 
   const sendWhatsApp = async () => {
     const serviceList = receipt.services.map(s => `- ${s.name}: ${formatCurrency(s.amount)}`).join('\n');
+    const verifyLink = `${window.location.origin}/verify/${receipt.id}`;
     
     const message = `नमस्कार ${receipt.customerName} ज्यू,
 
@@ -78,6 +79,9 @@ ${serviceList}
 अक्षरमा: ${numberToWords(receipt.totalAmount)} Rupees Only
 भुक्तानी माध्यम: ${receipt.paymentMethod}
 रसिद नम्बर: ${receipt.receiptNumber}
+
+कृपया तलको लिंकमा क्लिक गरेर आफ्नो अर्डर भेरिफाई (Verify) गर्नुहोला:
+${verifyLink}
 
 धन्यवाद,
 Digital Solution`;
@@ -149,6 +153,15 @@ Digital Solution`;
         </div>
       </div>
 
+      {receipt.verified && (
+        <div className="flex justify-center mb-6">
+          <div className="bg-green-50 border border-green-200 text-green-800 px-6 py-3 rounded-sm text-sm font-bold flex items-center gap-2">
+            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+            Customer Verified on {new Date(receipt.verifiedAt!).toLocaleString()}
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-center">
         {/* Receipt Container */}
         <div 
@@ -159,14 +172,15 @@ Digital Solution`;
           {/* Header */}
           <div className="flex justify-between items-start mb-10">
             <div>
-              <div className="w-12 h-12 bg-purple-900 rounded-sm flex items-center justify-center text-white font-bold text-xl mb-2">DS</div>
+              <img src="/logo.png" alt="Digital Solution" className="h-12 object-contain mb-2" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.insertAdjacentHTML('afterend', '<div class="w-12 h-12 bg-purple-900 rounded-sm flex items-center justify-center text-white font-bold text-xl mb-2">DS</div>'); }} />
               <h3 className="text-purple-900 font-bold uppercase tracking-tight">Digital Solution</h3>
             </div>
             <div className="text-right">
               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Receipt Number</p>
               <p className="text-sm font-bold text-purple-900 mb-2">{receipt.receiptNumber}</p>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Date</p>
-              <p className="text-sm font-bold text-purple-900">{new Date(receipt.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Date (AD / BS)</p>
+              <p className="text-sm font-bold text-purple-900">{formatEnglishDate(receipt.date)}</p>
+              <p className="text-xs font-semibold text-gray-500">{formatNepaliDate(receipt.date)}</p>
             </div>
           </div>
 

@@ -15,29 +15,20 @@ export function Login() {
     setError('');
     setLoading(true);
     
-    setTimeout(async () => {
-      try {
-        if (email === 'admin@digitalsolutionnepal.com' && password === 'Admin@123') {
-          await login(email, 'admin');
-          navigate('/');
-        } else if (email === 'staff@digitalsolutionnepal.com' && password === 'Staff@123') {
-          await login(email, 'staff');
-          navigate('/');
-        } else {
-          setError('Invalid email or password.');
-        }
-      } catch (err: any) {
-        setError('An error occurred during login.');
-      } finally {
-        setLoading(false);
-      }
-    }, 500);
+    try {
+      await login(email, password);
+      navigate('/');
+    } catch (err: any) {
+      setError(err.message || 'An error occurred during login.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center">
-        <div className="w-16 h-16 bg-purple-900 rounded-sm flex items-center justify-center text-white font-bold text-3xl mb-6">DS</div>
+        <img src="/logo.png" alt="Digital Solution" className="h-16 object-contain mb-6" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.insertAdjacentHTML('afterend', '<div class="w-16 h-16 bg-purple-900 rounded-sm flex items-center justify-center text-white font-bold text-3xl mb-6">DS</div>'); }} />
         <h2 className="text-center text-2xl font-bold tracking-tight text-purple-900">
           Digital Solution
         </h2>
@@ -95,14 +86,6 @@ export function Login() {
               </button>
             </div>
           </form>
-          
-          <div className="mt-8 pt-6 border-t border-gray-100 text-xs text-gray-500">
-            <p className="font-bold mb-2 uppercase tracking-wider text-gray-400">Demo Credentials:</p>
-            <div className="space-y-2">
-              <p><span className="font-semibold">Admin:</span> admin@digitalsolutionnepal.com / Admin@123</p>
-              <p><span className="font-semibold">Staff:</span> staff@digitalsolutionnepal.com / Staff@123</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

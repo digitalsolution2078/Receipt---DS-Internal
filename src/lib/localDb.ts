@@ -1,47 +1,51 @@
-import { Receipt } from '../types';
+import { Receipt, PredefinedService } from '../types';
+import { db } from './firebase';
+import { collection, getDocs, setDoc, doc, updateDoc, getDoc, addDoc, query, orderBy } from 'firebase/firestore';
 
-const STORAGE_KEY = 'demo_receipts';
 const SERVICES_KEY = 'demo_services';
 const PAYMENT_METHODS_KEY = 'demo_payment_methods';
 
-export interface PredefinedService {
-  id: string;
-  name: string;
-  defaultAmount: number;
+export async function getReceipts(): Promise<Receipt[]> {
+  const q = query(collection(db, 'receipts'), orderBy('createdAt', 'desc'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Receipt));
 }
 
-export function getReceipts(): Receipt[] {
-  const data = localStorage.getItem(STORAGE_KEY);
-  return data ? JSON.parse(data) : [];
+export async function saveReceipt(receipt: Receipt): Promise<string> {
+  const newReceiptRef = doc(collection(db, 'receipts'));
+  await setDoc(newReceiptRef, { ...receipt, id: newReceiptRef.id });
+  return newReceiptRef.id;
 }
 
-export function saveReceipt(receipt: Receipt): void {
-  const receipts = getReceipts();
-  receipts.push(receipt);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(receipts));
+export async function updateReceipt(updatedReceipt: Receipt): Promise<void> {
+  if (!updatedReceipt.id) return;
+  const docRef = doc(db, 'receipts', updatedReceipt.id);
+  await updateDoc(docRef, updatedReceipt as any);
 }
 
-export function updateReceipt(updatedReceipt: Receipt): void {
-  let receipts = getReceipts();
-  receipts = receipts.map(r => r.id === updatedReceipt.id ? updatedReceipt : r);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(receipts));
+export async function getReceiptById(id: string): Promise<Receipt | undefined> {
+  const docRef = doc(db, 'receipts', id);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() } as Receipt;
+  }
+  return undefined;
 }
 
-export function getReceiptById(id: string): Receipt | undefined {
-  const receipts = getReceipts();
-  return receipts.find(r => r.id === id);
-}
-
-export function generateReceiptNumber(): string {
-  const receipts = getReceipts();
+export async function generateReceiptNumber(): Promise<string> {
+  // A simple generation method, not highly concurrency-safe but okay for now
+  const receipts = await getReceipts();
   const year = new Date().getFullYear();
   const count = receipts.length + 1;
   return `DS-${year}-${count.toString().padStart(5, '0')}`;
 }
 
-export function getPredefinedServices(): PredefinedService[] {
-  const data = localStorage.getItem(SERVICES_KEY);
-  if (data) return JSON.parse(data);
+export async function getPredefinedServices(): Promise<PredefinedService[]> {
+  const docRef = doc(db, 'settings', 'services');
+  const snap = await getDoc(docRef);
+  if (snap.exists() && snap.data().list) {
+    return snap.data().list;
+  }
   return [
     { id: '1', name: 'Web Development', defaultAmount: 15000 },
     { id: '2', name: 'Digital Marketing', defaultAmount: 5000 },
@@ -49,18 +53,27 @@ export function getPredefinedServices(): PredefinedService[] {
   ];
 }
 
-export function savePredefinedService(service: PredefinedService): void {
-  const services = getPredefinedServices();
+export async function savePredefinedService(service: PredefinedService): Promise<void> {
+  const services = await getPredefinedServices();
   services.push(service);
-  localStorage.setItem(SERVICES_KEY, JSON.stringify(services));
+  await setDoc(doc(db, 'settings', 'services'), { list: services });
 }
 
-export function getPaymentMethods(): string[] {
-  const data = localStorage.getItem(PAYMENT_METHODS_KEY);
-  if (data) return JSON.parse(data);
+export async function deletePredefinedService(id: string): Promise<void> {
+  let services = await getPredefinedServices();
+  services = services.filter(s => s.id !== id);
+  await setDoc(doc(db, 'settings', 'services'), { list: services });
+}
+
+export async function getPaymentMethods(): Promise<string[]> {
+  const docRef = doc(db, 'settings', 'payment_methods');
+  const snap = await getDoc(docRef);
+  if (snap.exists() && snap.data().list) {
+    return snap.data().list;
+  }
   return ['eSewa', 'Khalti', 'Bank Transfer', 'Cash'];
 }
 
-export function savePaymentMethods(methods: string[]): void {
-  localStorage.setItem(PAYMENT_METHODS_KEY, JSON.stringify(methods));
+export async function savePaymentMethods(methods: string[]): Promise<void> {
+  await setDoc(doc(db, 'settings', 'payment_methods'), { list: methods });
 }

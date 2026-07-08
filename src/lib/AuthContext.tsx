@@ -1,12 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { UserProfile } from '../types';
+import { auth, db } from './firebase';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   user: any | null;
   profile: UserProfile | null;
   loading: boolean;
   logout: () => Promise<void>;
-  login: (email: string, role: 'admin' | 'staff') => Promise<void>;
+  login: (email: string, pass: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -23,35 +26,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedSession = localStorage.getItem('demo_session');
-    if (storedSession) {
-      try {
-        const parsedProfile = JSON.parse(storedSession);
-        setProfile(parsedProfile);
-        setUser({ uid: parsedProfile.uid, email: parsedProfile.email });
-      } catch (err) {
-        console.error("Error parsing session", err);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
+      if (firebaseUser) {
+        // Fetch user profile from Firestore
+        try {
+          const docRef = doc(db, 'users', firebaseUser.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setProfile(docSnap.data() as UserProfile);
+          } else {
+            // Default to staff if no profile exists, or handle edge cases
+            const defaultProfile: UserProfile = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              role: 'staff',
+              createdAt: Date.now()
+            };
+            await setDoc(docRef, defaultProfile);
+            setProfile(defaultProfile);
+          }
+        } catch (error) {
+          console.error("Error fetching user profile", error);
+        }
+      } else {
+        setProfile(null);
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const login = async (email: string, role: 'admin' | 'staff') => {
-    const newProfile: UserProfile = {
-      uid: 'demo-' + role,
-      email,
-      role,
-      createdAt: Date.now()
-    };
-    localStorage.setItem('demo_session', JSON.stringify(newProfile));
-    setProfile(newProfile);
-    setUser({ uid: newProfile.uid, email: newProfile.email });
+  const login = async (email: string, pass: string) => {
+    await signInWithEmailAndPassword(auth, email, pass);
   };
 
   const logout = async () => {
-    localStorage.removeItem('demo_session');
-    setProfile(null);
-    setUser(null);
+    await signOut(auth);
   };
 
   return (
